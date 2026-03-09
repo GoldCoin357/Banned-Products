@@ -178,9 +178,15 @@ import os
 FRONTEND_DIR = os.path.join(os.path.dirname(__file__), "..", "..", "frontend")
 
 if os.path.isdir(FRONTEND_DIR):
-    app.mount("/static", StaticFiles(directory=os.path.join(FRONTEND_DIR, "assets")), name="static")
-    app.mount("/js", StaticFiles(directory=os.path.join(FRONTEND_DIR, "js")), name="js")
-    app.mount("/css", StaticFiles(directory=os.path.join(FRONTEND_DIR, "css")), name="css")
+    _assets_dir = os.path.join(FRONTEND_DIR, "assets")
+    if os.path.isdir(_assets_dir):
+        app.mount("/static", StaticFiles(directory=_assets_dir), name="static")
+    _js_dir = os.path.join(FRONTEND_DIR, "js")
+    if os.path.isdir(_js_dir):
+        app.mount("/js", StaticFiles(directory=_js_dir), name="js")
+    _css_dir = os.path.join(FRONTEND_DIR, "css")
+    if os.path.isdir(_css_dir):
+        app.mount("/css", StaticFiles(directory=_css_dir), name="css")
 
     @app.get("/", include_in_schema=False)
     def serve_dashboard():
