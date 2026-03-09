@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Banned Products Detection System | CPSC</title>
+  <link rel="stylesheet" href="/css/styles.css" />
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <!-- Feather Icons -->
+  <script src="https://cdn.jsdelivr.net/npm/feather-icons@4.29.0/dist/feather.min.js"></script>
+</head>
+<body>
+
+<!-- ============================================================
+     SIDEBAR NAVIGATION
+============================================================= -->
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-badge">CPSC</div>
+    <div class="logo-text">
+      <span class="logo-title">Banned Products</span>
+      <span class="logo-sub">Detection System</span>
+    </div>
+  </div>
+
+  <nav class="sidebar-nav">
+    <a href="#dashboard"   class="nav-item active" data-page="dashboard">
+      <i data-feather="bar-chart-2"></i><span>Dashboard</span>
+    </a>
+    <a href="#listings"    class="nav-item" data-page="listings">
+      <i data-feather="list"></i><span>Detected Listings</span>
+    </a>
+    <a href="#recalls"     class="nav-item" data-page="recalls">
+      <i data-feather="alert-triangle"></i><span>Recalls Database</span>
+    </a>
+    <a href="#scans"       class="nav-item" data-page="scans">
+      <i data-feather="search"></i><span>Scan Jobs</span>
+    </a>
+    <a href="#esafe"       class="nav-item" data-page="esafe">
+      <i data-feather="send"></i><span>eSAFE Rapid</span>
+    </a>
+  </nav>
+
+  <div class="sidebar-footer">
+    <span class="version-badge">v1.0.0</span>
+    <span class="cpsc-tag">Integrated with CPSC eSAFE Rapid</span>
+  </div>
+</aside>
+
+<!-- ============================================================
+     MAIN CONTENT
+============================================================= -->
+<main class="main-content">
+
+  <!-- TOP BAR -->
+  <header class="topbar">
+    <button class="menu-toggle" id="menuToggle" aria-label="Toggle menu">
+      <i data-feather="menu"></i>
+    </button>
+    <div class="topbar-title" id="pageTitle">Dashboard</div>
+    <div class="topbar-actions">
+      <button class="btn btn-outline" id="syncCpscBtn">
+        <i data-feather="refresh-cw"></i> Sync CPSC
+      </button>
+      <button class="btn btn-primary" id="newScanBtn">
+        <i data-feather="zap"></i> New Scan
+      </button>
+    </div>
+  </header>
+
+  <!-- ========================================================
+       PAGE: DASHBOARD
+  ========================================================= -->
+  <section class="page active" id="page-dashboard">
+
+    <!-- Summary Cards -->
+    <div class="card-grid card-grid--4">
+      <div class="stat-card stat-card--blue">
+        <div class="stat-icon"><i data-feather="alert-circle"></i></div>
+        <div class="stat-body">
+          <div class="stat-value" id="totalDetected">–</div>
+          <div class="stat-label">Detected Listings</div>
+        </div>
+      </div>
+      <div class="stat-card stat-card--orange">
+        <div class="stat-icon"><i data-feather="check-circle"></i></div>
+        <div class="stat-body">
+          <div class="stat-value" id="confirmedListings">–</div>
+          <div class="stat-label">Confirmed Matches</div>
+        </div>
+      </div>
+      <div class="stat-card stat-card--green">
+        <div class="stat-icon"><i data-feather="send"></i></div>
+        <div class="stat-body">
+          <div class="stat-value" id="reportedEsafe">–</div>
+          <div class="stat-label">Reported to eSAFE</div>
+        </div>
+      </div>
+      <div class="stat-card stat-card--red">
+        <div class="stat-icon"><i data-feather="database"></i></div>
+        <div class="stat-body">
+          <div class="stat-value" id="activeRecalls">–</div>
+          <div class="stat-label">Active Recalls</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Secondary Stats -->
+    <div class="card-grid card-grid--2">
+      <div class="stat-card stat-card--purple">
+        <div class="stat-icon"><i data-feather="trending-up"></i></div>
+        <div class="stat-body">
+          <div class="stat-value" id="newThisWeek">–</div>
+          <div class="stat-label">New This Week</div>
+        </div>
+      </div>
+      <div class="stat-card stat-card--teal">
+        <div class="stat-icon"><i data-feather="cpu"></i></div>
+        <div class="stat-body">
+          <div class="stat-value" id="avgConfidence">–</div>
+          <div class="stat-label">Avg AI Confidence</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Charts Row 1 -->
+    <div class="card-grid card-grid--2">
+      <div class="card">
+        <div class="card-header">
+          <h3>Daily Detections (30d)</h3>
+          <select class="filter-select" id="trendPlatformFilter">
+            <option value="">All Platforms</option>
+            <option value="ebay">eBay</option>
+            <option value="craigslist">Craigslist</option>
+            <option value="facebook">Facebook</option>
+            <option value="offerup">OfferUp</option>
+          </select>
+        </div>
+        <div class="chart-container">
+          <canvas id="trendChart"></canvas>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <h3>Detections by Platform</h3>
+          <select class="filter-select" id="platformDaysFilter">
+            <option value="30">Last 30d</option>
+            <option value="7">Last 7d</option>
+            <option value="90">Last 90d</option>
+          </select>
+        </div>
+        <div class="chart-container">
+          <canvas id="platformChart"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- Charts Row 2 -->
+    <div class="card-grid card-grid--2">
+      <div class="card">
+        <div class="card-header">
+          <h3>Detections by Product Type</h3>
+        </div>
+        <div class="chart-container">
+          <canvas id="productTypeChart"></canvas>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <h3>AI Confidence Distribution</h3>
+        </div>
+        <div class="chart-container">
+          <canvas id="confidenceChart"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- Top Recalls Table -->
+    <div class="card">
+      <div class="card-header">
+        <h3>Top Recalled Products (Most Listings Found)</h3>
+        <button class="btn btn-sm btn-outline" onclick="App.loadTopRecalls()">
+          <i data-feather="refresh-cw"></i> Refresh
+        </button>
+      </div>
+      <div class="table-wrapper">
+        <table class="data-table" id="topRecallsTable">
+          <thead>
+            <tr>
+              <th>Product</th>
+              <th>Brand</th>
+              <th>Recall #</th>
+              <th>Category</th>
+              <th>Listings Found</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="topRecallsBody">
+            <tr><td colspan="6" class="loading-cell">Loading...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Platform × Product Matrix -->
+    <div class="card">
+      <div class="card-header">
+        <h3>Platform × Product Type Matrix</h3>
+      </div>
+      <div id="matrixContainer" class="matrix-container"></div>
+    </div>
+
+  </section>
+
+  <!-- ========================================================
+       PAGE: DETECTED LISTINGS
+  ========================================================= -->
+  <section class="page" id="page-listings">
+    <div class="card">
+      <div class="card-header">
+        <h3>Detected Listings</h3>
+        <div class="filter-bar">
+          <input type="text" class="filter-input" id="listingSearch" placeholder="Search title, URL, seller..." />
+          <select class="filter-select" id="listingPlatformFilter">
+            <option value="">All Platforms</option>
+            <option value="ebay">eBay</option>
+            <option value="craigslist">Craigslist</option>
+            <option value="facebook">Facebook</option>
+            <option value="offerup">OfferUp</option>
+          </select>
+          <select class="filter-select" id="listingStatusFilter">
+            <option value="">All Statuses</option>
+            <option value="confirmed">Confirmed</option>
+            <option value="pending">Pending Review</option>
+            <option value="reported">Reported to eSAFE</option>
+          </select>
+          <input type="number" class="filter-input filter-input--sm" id="listingMinConf"
+                 placeholder="Min conf." step="0.05" min="0" max="1" />
+          <button class="btn btn-primary btn-sm" onclick="App.loadListings()">Filter</button>
+        </div>
+      </div>
+      <div class="table-wrapper">
+        <table class="data-table" id="listingsTable">
+          <thead>
+            <tr>
+              <th>Platform</th>
+              <th>Title / URL</th>
+              <th>Price</th>
+              <th>AI Conf.</th>
+              <th>Product Type</th>
+              <th>Detected</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="listingsBody">
+            <tr><td colspan="8" class="loading-cell">Loading...</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="pagination" id="listingsPagination"></div>
+    </div>
+  </section>
+
+  <!-- ========================================================
+       PAGE: RECALLS DATABASE
+  ========================================================= -->
+  <section class="page" id="page-recalls">
+    <div class="card">
+      <div class="card-header">
+        <h3>CPSC Recalls Database</h3>
+        <div class="filter-bar">
+          <input type="text" class="filter-input" id="recallSearch" placeholder="Search product, brand, recall #..." />
+          <select class="filter-select" id="recallTypeFilter">
+            <option value="">All Types</option>
+          </select>
+          <button class="btn btn-primary btn-sm" onclick="App.loadRecalls()">Filter</button>
+          <button class="btn btn-outline btn-sm" onclick="App.syncCpsc()">
+            <i data-feather="refresh-cw"></i> Sync CPSC
+          </button>
+        </div>
+      </div>
+      <div class="table-wrapper">
+        <table class="data-table" id="recallsTable">
+          <thead>
+            <tr>
+              <th>Recall #</th>
+              <th>Product</th>
+              <th>Brand</th>
+              <th>Type / Category</th>
+              <th>Date</th>
+              <th>Hazard</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="recallsBody">
+            <tr><td colspan="8" class="loading-cell">Loading...</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="pagination" id="recallsPagination"></div>
+    </div>
+  </section>
+
+  <!-- ========================================================
+       PAGE: SCAN JOBS
+  ========================================================= -->
+  <section class="page" id="page-scans">
+    <!-- Trigger panel -->
+    <div class="card">
+      <div class="card-header"><h3>Trigger New Scan</h3></div>
+      <div class="scan-form">
+        <div class="form-row">
+          <label>Platform</label>
+          <select id="scanPlatform" class="filter-select">
+            <option value="">All Platforms</option>
+            <option value="ebay">eBay</option>
+            <option value="craigslist">Craigslist</option>
+            <option value="facebook">Facebook Marketplace</option>
+            <option value="offerup">OfferUp</option>
+          </select>
+        </div>
+        <div class="form-row">
+          <label>Max Results / Platform</label>
+          <input type="number" id="scanMaxResults" class="filter-input" value="50" min="5" max="200" />
+        </div>
+        <div class="form-row">
+          <label>Auto-Submit to eSAFE (≥90% confidence)</label>
+          <input type="checkbox" id="scanAutoSubmit" />
+        </div>
+        <button class="btn btn-primary" onclick="App.triggerScan()">
+          <i data-feather="zap"></i> Start Scan
+        </button>
+      </div>
+    </div>
+
+    <!-- Job list -->
+    <div class="card">
+      <div class="card-header">
+        <h3>Scan Job History</h3>
+        <button class="btn btn-sm btn-outline" onclick="App.loadScans()">
+          <i data-feather="refresh-cw"></i> Refresh
+        </button>
+      </div>
+      <div class="table-wrapper">
+        <table class="data-table" id="scansTable">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Platform</th>
+              <th>Status</th>
+              <th>Scanned</th>
+              <th>Detected</th>
+              <th>Started</th>
+              <th>Duration</th>
+            </tr>
+          </thead>
+          <tbody id="scansBody">
+            <tr><td colspan="7" class="loading-cell">Loading...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========================================================
+       PAGE: eSAFE RAPID
+  ========================================================= -->
+  <section class="page" id="page-esafe">
+    <!-- Status cards -->
+    <div class="card-grid card-grid--3">
+      <div class="stat-card stat-card--green">
+        <div class="stat-icon"><i data-feather="check-square"></i></div>
+        <div class="stat-body">
+          <div class="stat-value" id="esafeTotalReported">–</div>
+          <div class="stat-label">Total Reported to eSAFE</div>
+        </div>
+      </div>
+      <div class="stat-card stat-card--orange">
+        <div class="stat-icon"><i data-feather="clock"></i></div>
+        <div class="stat-body">
+          <div class="stat-value" id="esafePending">–</div>
+          <div class="stat-label">Pending Submission</div>
+        </div>
+      </div>
+      <div class="stat-card stat-card--blue">
+        <div class="stat-icon"><i data-feather="link"></i></div>
+        <div class="stat-body">
+          <a href="https://esafe.cpsc.gov" target="_blank" class="esafe-link">Open CPSC eSAFE Rapid →</a>
+          <div class="stat-label">External Portal</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bulk submit -->
+    <div class="card">
+      <div class="card-header"><h3>Bulk eSAFE Submission</h3></div>
+      <p class="card-desc">
+        Submit all confirmed, unreported listings to CPSC eSAFE Rapid in bulk.
+        Requires <code>CPSC_RAPID_API_KEY</code> to be configured.
+      </p>
+      <button class="btn btn-primary" onclick="App.submitAllPending()">
+        <i data-feather="send"></i> Submit All Pending
+      </button>
+    </div>
+
+    <!-- Reported listings -->
+    <div class="card">
+      <div class="card-header"><h3>Reported Listings</h3></div>
+      <div class="table-wrapper">
+        <table class="data-table" id="esafeTable">
+          <thead>
+            <tr>
+              <th>Platform</th>
+              <th>Title</th>
+              <th>eSAFE Report ID</th>
+              <th>Submitted At</th>
+              <th>Listing URL</th>
+            </tr>
+          </thead>
+          <tbody id="esafeBody">
+            <tr><td colspan="5" class="loading-cell">Loading...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<!-- ============================================================
+     LISTING DETAIL MODAL
+============================================================= -->
+<div class="modal-overlay" id="listingModal" style="display:none">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 id="modalTitle">Listing Detail</h2>
+      <button class="modal-close" onclick="App.closeModal()">&times;</button>
+    </div>
+    <div class="modal-body" id="modalBody"></div>
+    <div class="modal-footer" id="modalFooter"></div>
+  </div>
+</div>
+
+<!-- Toast notification -->
+<div class="toast" id="toast"></div>
+
+<script src="/js/api.js"></script>
+<script src="/js/charts.js"></script>
+<script src="/js/app.js"></script>
+</body>
+</html>
