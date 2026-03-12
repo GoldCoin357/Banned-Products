@@ -9,7 +9,7 @@ from pydantic import BaseModel
 from datetime import datetime
 from typing import Any
 
-from ..database import get_db
+from ..database import get_db, SessionLocal
 from ..models.recall import RecalledProduct
 from ..services.cpsc_service import fetch_cpsc_recalls
 
@@ -104,7 +104,14 @@ async def sync_cpsc(
     db: Session = Depends(get_db),
 ):
     """Trigger a background sync of CPSC recall data."""
-    background_tasks.add_task(fetch_cpsc_recalls, db, days_back=days_back)
+    async def _sync_task():
+        task_db = SessionLocal()
+        try:
+            await fetch_cpsc_recalls(task_db, days_back=days_back)
+        finally:
+            task_db.close()
+
+    background_tasks.add_task(_sync_task)
     return {"message": "CPSC sync started in the background"}
 
 
