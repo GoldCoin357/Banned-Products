@@ -7,7 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks, Query
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
-from ..database import get_db
+from ..database import get_db, SessionLocal
 from ..models.recall import RecalledProduct
 from ..models.listing import ScanJob
 from ..services.scan_service import run_scan, run_all_platforms_scan
@@ -72,18 +72,26 @@ async def trigger_scan(
     if not recalls:
         raise HTTPException(status_code=404, detail="No active recalls found to scan for")
 
+    async def _scan_task(platform: str, recall_id: int) -> None:
+        task_db = SessionLocal()
+        try:
+            task_recall = task_db.query(RecalledProduct).filter(RecalledProduct.id == recall_id).first()
+            if task_recall:
+                await run_scan(
+                    db=task_db,
+                    platform=platform,
+                    recall=task_recall,
+                    max_results=payload.max_results,
+                    auto_submit_esafe=payload.auto_submit_esafe,
+                )
+        finally:
+            task_db.close()
+
     # Queue background tasks
     job_count = 0
     for recall in recalls:
         for platform in platforms:
-            background_tasks.add_task(
-                run_scan,
-                db=db,
-                platform=platform,
-                recall=recall,
-                max_results=payload.max_results,
-                auto_submit_esafe=payload.auto_submit_esafe,
-            )
+            background_tasks.add_task(_scan_task, platform, recall.id)
             job_count += 1
 
     return {
