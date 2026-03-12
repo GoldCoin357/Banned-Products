@@ -37,10 +37,14 @@
     <a href="#scans"       class="nav-item" data-page="scans">
       <i data-feather="search"></i><span>Scan Jobs</span>
     </a>
+    <a href="#esafe"       class="nav-item" data-page="esafe">
+      <i data-feather="send"></i><span>eSAFE Rapid</span>
+    </a>
   </nav>
 
   <div class="sidebar-footer">
     <span class="version-badge">v1.0.0</span>
+    <span class="cpsc-tag">Integrated with CPSC eSAFE Rapid</span>
   </div>
 </aside>
 
@@ -84,6 +88,13 @@
         <div class="stat-body">
           <div class="stat-value" id="confirmedListings">–</div>
           <div class="stat-label">Confirmed Matches</div>
+        </div>
+      </div>
+      <div class="stat-card stat-card--green">
+        <div class="stat-icon"><i data-feather="send"></i></div>
+        <div class="stat-body">
+          <div class="stat-value" id="reportedEsafe">–</div>
+          <div class="stat-label">Reported to eSAFE</div>
         </div>
       </div>
       <div class="stat-card stat-card--red">
@@ -222,6 +233,7 @@
             <option value="">All Statuses</option>
             <option value="confirmed">Confirmed</option>
             <option value="pending">Pending Review</option>
+            <option value="reported">Reported to eSAFE</option>
           </select>
           <input type="number" class="filter-input filter-input--sm" id="listingMinConf"
                  placeholder="Min conf." step="0.05" min="0" max="1" />
@@ -314,6 +326,10 @@
           <label>Max Results / Platform</label>
           <input type="number" id="scanMaxResults" class="filter-input" value="50" min="5" max="200" />
         </div>
+        <div class="form-row">
+          <label>Auto-Submit to eSAFE (≥90% confidence)</label>
+          <input type="checkbox" id="scanAutoSubmit" />
+        </div>
         <button class="btn btn-primary" onclick="App.triggerScan()">
           <i data-feather="zap"></i> Start Scan
         </button>
@@ -349,6 +365,68 @@
     </div>
   </section>
 
+  <!-- ========================================================
+       PAGE: eSAFE RAPID
+  ========================================================= -->
+  <section class="page" id="page-esafe">
+    <!-- Status cards -->
+    <div class="card-grid card-grid--3">
+      <div class="stat-card stat-card--green">
+        <div class="stat-icon"><i data-feather="check-square"></i></div>
+        <div class="stat-body">
+          <div class="stat-value" id="esafeTotalReported">–</div>
+          <div class="stat-label">Total Reported to eSAFE</div>
+        </div>
+      </div>
+      <div class="stat-card stat-card--orange">
+        <div class="stat-icon"><i data-feather="clock"></i></div>
+        <div class="stat-body">
+          <div class="stat-value" id="esafePending">–</div>
+          <div class="stat-label">Pending Submission</div>
+        </div>
+      </div>
+      <div class="stat-card stat-card--blue">
+        <div class="stat-icon"><i data-feather="link"></i></div>
+        <div class="stat-body">
+          <a href="https://esafe.cpsc.gov" target="_blank" class="esafe-link">Open CPSC eSAFE Rapid →</a>
+          <div class="stat-label">External Portal</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bulk submit -->
+    <div class="card">
+      <div class="card-header"><h3>Bulk eSAFE Submission</h3></div>
+      <p class="card-desc">
+        Submit all confirmed, unreported listings to CPSC eSAFE Rapid in bulk.
+        Requires <code>CPSC_RAPID_API_KEY</code> to be configured.
+      </p>
+      <button class="btn btn-primary" onclick="App.submitAllPending()">
+        <i data-feather="send"></i> Submit All Pending
+      </button>
+    </div>
+
+    <!-- Reported listings -->
+    <div class="card">
+      <div class="card-header"><h3>Reported Listings</h3></div>
+      <div class="table-wrapper">
+        <table class="data-table" id="esafeTable">
+          <thead>
+            <tr>
+              <th>Platform</th>
+              <th>Title</th>
+              <th>eSAFE Report ID</th>
+              <th>Submitted At</th>
+              <th>Listing URL</th>
+            </tr>
+          </thead>
+          <tbody id="esafeBody">
+            <tr><td colspan="5" class="loading-cell">Loading...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
 
 </main>
 
