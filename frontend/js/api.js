@@ -67,8 +67,4 @@ const Api = {
   triggerScan: (payload) => Api.post('/api/scans/trigger', payload),
   getScans:    (params)  => Api.get('/api/scans/', params),
 
-  // ── eSAFE ──────────────────────────────────────────────────────────────────
-  getEsafeStatus:   ()   => Api.get('/api/esafe/status'),
-  submitListing:    (id) => Api.post(`/api/esafe/submit/${id}`),
-  submitAllPending: ()   => Api.post('/api/esafe/submit-pending'),
 };
