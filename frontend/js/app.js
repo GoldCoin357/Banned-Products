@@ -469,7 +469,6 @@ const App = (() => {
     const payload = {
       platform:          document.getElementById('scanPlatform').value || null,
       max_results:       parseInt(document.getElementById('scanMaxResults').value) || 50,
-      auto_submit_esafe: document.getElementById('scanAutoSubmit').checked,
     };
     try {
       toast('Triggering scan…');
