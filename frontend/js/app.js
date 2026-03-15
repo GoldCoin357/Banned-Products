@@ -467,6 +467,17 @@ const App = (() => {
     }
   }
 
+  async function deleteAllScans() {
+    if (!confirm('Delete all scan job history?')) return;
+    try {
+      const result = await Api.deleteAllScans();
+      toast(result.message, 'success');
+      loadScans();
+    } catch (err) {
+      toast('Delete failed: ' + err.message, 'error');
+    }
+  }
+
   async function triggerScan() {
     const payload = {
       platform:          document.getElementById('scanPlatform').value || null,
@@ -602,6 +613,7 @@ const App = (() => {
     triggerScan,
     loadListingsForRecall,
     scanForRecall,
+    deleteAllScans,
     // Internals exposed for inline event handlers
     _page,
   };

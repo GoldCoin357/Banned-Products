@@ -343,9 +343,14 @@
     <div class="card">
       <div class="card-header">
         <h3>Scan Job History</h3>
-        <button class="btn btn-sm btn-outline" onclick="App.loadScans()">
-          <i data-feather="refresh-cw"></i> Refresh
-        </button>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-sm btn-outline" onclick="App.loadScans()">
+            <i data-feather="refresh-cw"></i> Refresh
+          </button>
+          <button class="btn btn-sm" style="color:#c62828;border-color:#c62828" onclick="App.deleteAllScans()">
+            <i data-feather="trash-2"></i> Delete All
+          </button>
+        </div>
       </div>
       <div class="table-wrapper">
         <table class="data-table" id="scansTable">

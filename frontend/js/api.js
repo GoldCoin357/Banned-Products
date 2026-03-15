@@ -67,6 +67,7 @@ const Api = {
   // ── Scans ──────────────────────────────────────────────────────────────────
   triggerScan: (payload) => Api.post('/api/scans/trigger', payload),
   getScans:    (params)  => Api.get('/api/scans/', params),
+  deleteAllScans: () => Api.delete('/api/scans/'),
 
   // ── eSAFE ──────────────────────────────────────────────────────────────────
   getEsafeStatus:   ()   => Api.get('/api/esafe/status'),

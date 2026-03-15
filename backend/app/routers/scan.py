@@ -136,3 +136,10 @@ def get_scan(job_id: int, db: Session = Depends(get_db)):
     if not job:
         raise HTTPException(status_code=404, detail="Scan job not found")
     return job
+
+
+@router.delete("/", summary="Delete all scan jobs")
+def delete_all_scans(db: Session = Depends(get_db)):
+    count = db.query(ScanJob).delete()
+    db.commit()
+    return {"message": f"Deleted {count} scan job(s)"}
