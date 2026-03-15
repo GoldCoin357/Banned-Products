@@ -64,7 +64,6 @@ const App = (() => {
       case 'listings':  loadListings();  break;
       case 'recalls':   loadRecalls();   break;
       case 'scans':     loadScans();     break;
-      case 'esafe':     loadEsafe();     break;
     }
   }
 
@@ -218,7 +217,6 @@ const App = (() => {
             <div style="display:flex;gap:4px">
               <button class="btn btn-sm btn-outline" onclick="App.openListingModal(${l.id})">View</button>
               ${!l.is_confirmed ? `<button class="btn btn-sm btn-success" onclick="App.confirmListing(${l.id},true)">✓</button>` : ''}
-              ${!l.is_reported && l.is_confirmed ? `<button class="btn btn-sm btn-primary" onclick="App.submitToEsafe(${l.id})">eSAFE</button>` : ''}
               ${l.is_valid ? `<button class="btn btn-sm btn-danger" onclick="App.invalidateListing(${l.id})">✕</button>` : ''}
             </div>
           </td>
@@ -304,7 +302,6 @@ const App = (() => {
 
       document.getElementById('modalFooter').innerHTML = `
         ${!l.is_confirmed ? `<button class="btn btn-success" onclick="App.confirmListing(${l.id},true);App.closeModal()">Confirm Match</button>` : ''}
-        ${!l.is_reported && l.is_confirmed ? `<button class="btn btn-primary" onclick="App.submitToEsafe(${l.id})">Submit to eSAFE</button>` : ''}
         ${l.is_valid ? `<button class="btn btn-danger" onclick="App.invalidateListing(${l.id});App.closeModal()">Invalidate</button>` : ''}
         <button class="btn btn-outline" onclick="App.closeModal()">Close</button>
       `;
@@ -341,16 +338,6 @@ const App = (() => {
     }
   }
 
-  async function submitToEsafe(id) {
-    try {
-      toast('Submitting to CPSC eSAFE…');
-      const result = await Api.submitListing(id);
-      toast('Submitted! Report ID: ' + result.esafe_report_id, 'success');
-      loadListings(_listingPage);
-    } catch (err) {
-      toast('eSAFE submission failed: ' + err.message, 'error');
-    }
-  }
 
   // ── Recalls ────────────────────────────────────────────────────────────────
   async function loadRecalls(page = 1) {
@@ -494,45 +481,6 @@ const App = (() => {
     }
   }
 
-  // ── eSAFE ──────────────────────────────────────────────────────────────────
-  async function loadEsafe() {
-    try {
-      const [status, listings] = await Promise.all([
-        Api.getEsafeStatus(),
-        Api.getListings({ is_reported: true, page: 1, page_size: 50 }),
-      ]);
-      setText('esafeTotalReported', status.total_reported);
-      setText('esafePending',       status.pending_submission);
-
-      const tbody = document.getElementById('esafeBody');
-      if (!listings.results.length) {
-        tbody.innerHTML = '<tr><td colspan="5" class="loading-cell">No reported listings yet.</td></tr>';
-        return;
-      }
-      tbody.innerHTML = listings.results.map(l => `
-        <tr>
-          <td><span class="badge badge--${l.platform}">${l.platform}</span></td>
-          <td>${esc(l.title || '–')}</td>
-          <td><code>${esc(l.esafe_report_id || '–')}</code></td>
-          <td style="font-size:12px">${formatDate(l.esafe_submitted_at)}</td>
-          <td><a href="${esc(l.listing_url)}" target="_blank" style="color:#1976d2;font-size:12px">View →</a></td>
-        </tr>
-      `).join('');
-    } catch (err) {
-      toast('Failed to load eSAFE status: ' + err.message, 'error');
-    }
-  }
-
-  async function submitAllPending() {
-    try {
-      toast('Queuing bulk eSAFE submission…');
-      await Api.submitAllPending();
-      toast('Bulk submission queued', 'success');
-      setTimeout(loadEsafe, 1000);
-    } catch (err) {
-      toast('Bulk submit failed: ' + err.message, 'error');
-    }
-  }
 
   // ── Helpers ────────────────────────────────────────────────────────────────
   function renderPagination(containerId, total, currentPage, pageSize, onPage) {
@@ -600,15 +548,12 @@ const App = (() => {
     loadListings,
     loadRecalls,
     loadScans,
-    loadEsafe,
     loadTopRecalls,
     // Actions
     openListingModal,
     closeModal,
     confirmListing,
     invalidateListing,
-    submitToEsafe,
-    submitAllPending,
     syncCpsc,
     triggerScan,
     loadListingsForRecall,

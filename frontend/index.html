@@ -37,9 +37,7 @@
     <a href="#scans"       class="nav-item" data-page="scans">
       <i data-feather="search"></i><span>Scan Jobs</span>
     </a>
-    <a href="#esafe"       class="nav-item" data-page="esafe">
-      <i data-feather="send"></i><span>eSAFE Rapid</span>
-    </a>
+
   </nav>
 
   <div class="sidebar-footer">
@@ -373,67 +371,6 @@
     </div>
   </section>
 
-  <!-- ========================================================
-       PAGE: eSAFE RAPID
-  ========================================================= -->
-  <section class="page" id="page-esafe">
-    <!-- Status cards -->
-    <div class="card-grid card-grid--3">
-      <div class="stat-card stat-card--green">
-        <div class="stat-icon"><i data-feather="check-square"></i></div>
-        <div class="stat-body">
-          <div class="stat-value" id="esafeTotalReported">–</div>
-          <div class="stat-label">Total Reported to eSAFE</div>
-        </div>
-      </div>
-      <div class="stat-card stat-card--orange">
-        <div class="stat-icon"><i data-feather="clock"></i></div>
-        <div class="stat-body">
-          <div class="stat-value" id="esafePending">–</div>
-          <div class="stat-label">Pending Submission</div>
-        </div>
-      </div>
-      <div class="stat-card stat-card--blue">
-        <div class="stat-icon"><i data-feather="link"></i></div>
-        <div class="stat-body">
-          <a href="https://esafe.cpsc.gov" target="_blank" class="esafe-link">Open CPSC eSAFE Rapid →</a>
-          <div class="stat-label">External Portal</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Bulk submit -->
-    <div class="card">
-      <div class="card-header"><h3>Bulk eSAFE Submission</h3></div>
-      <p class="card-desc">
-        Submit all confirmed, unreported listings to CPSC eSAFE Rapid in bulk.
-      </p>
-      <button class="btn btn-primary" onclick="App.submitAllPending()">
-        <i data-feather="send"></i> Submit All Pending
-      </button>
-    </div>
-
-    <!-- Reported listings -->
-    <div class="card">
-      <div class="card-header"><h3>Reported Listings</h3></div>
-      <div class="table-wrapper">
-        <table class="data-table" id="esafeTable">
-          <thead>
-            <tr>
-              <th>Platform</th>
-              <th>Title</th>
-              <th>eSAFE Report ID</th>
-              <th>Submitted At</th>
-              <th>Listing URL</th>
-            </tr>
-          </thead>
-          <tbody id="esafeBody">
-            <tr><td colspan="5" class="loading-cell">Loading...</td></tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-  </section>
 
 </main>
 
