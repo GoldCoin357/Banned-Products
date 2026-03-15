@@ -28,6 +28,7 @@ const App = (() => {
     });
 
     // Top bar buttons
+    document.getElementById('seedDataBtn').addEventListener('click', seedData);
     document.getElementById('syncCpscBtn').addEventListener('click', syncCpsc);
     document.getElementById('newScanBtn').addEventListener('click', () => navigateTo('scans'));
 
@@ -406,6 +407,17 @@ const App = (() => {
       navigateTo('scans');
     } catch (err) {
       toast('Scan error: ' + err.message, 'error');
+    }
+  }
+
+  async function seedData() {
+    try {
+      toast('Loading sample recalls…');
+      const result = await Api.seedRecalls();
+      toast(result.message, 'success');
+      loadRecalls();
+    } catch (err) {
+      toast('Seed failed: ' + err.message, 'error');
     }
   }
 

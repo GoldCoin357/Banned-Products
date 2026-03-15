@@ -62,6 +62,7 @@ const Api = {
   // ── Recalls ────────────────────────────────────────────────────────────────
   getRecalls: (params) => Api.get('/api/recalls/', params),
   syncCpsc:   (days_back) => Api.post('/api/recalls/sync', { days_back }),
+  seedRecalls: () => Api.post('/api/recalls/seed'),
 
   // ── Scans ──────────────────────────────────────────────────────────────────
   triggerScan: (payload) => Api.post('/api/scans/trigger', payload),
