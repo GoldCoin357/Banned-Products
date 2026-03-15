@@ -46,6 +46,11 @@ def list_platforms():
     return {"platforms": list(PLATFORM_SCRAPERS.keys())}
 
 
+@router.get("/trigger", include_in_schema=False)
+def trigger_method_hint():
+    raise HTTPException(status_code=405, detail="Use POST /api/scans/trigger to start a scan")
+
+
 @router.post("/trigger", summary="Trigger a new scan job")
 async def trigger_scan(
     payload: ScanRequest,
@@ -70,7 +75,7 @@ async def trigger_scan(
         recalls = db.query(RecalledProduct).filter(RecalledProduct.is_active == True).all()
 
     if not recalls:
-        raise HTTPException(status_code=404, detail="No active recalls found to scan for")
+        return {"message": "No active recalls found — sync CPSC data first", "platforms": [], "recall_count": 0}
 
     async def _scan_task(platform: str, recall_id: int) -> None:
         task_db = SessionLocal()
