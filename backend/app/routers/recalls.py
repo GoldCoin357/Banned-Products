@@ -9,7 +9,7 @@ from pydantic import BaseModel
 from datetime import datetime
 from typing import Any
 
-from ..database import get_db
+from ..database import get_db, SessionLocal
 from ..models.recall import RecalledProduct
 from ..services.cpsc_service import fetch_cpsc_recalls
 
@@ -104,7 +104,14 @@ async def sync_cpsc(
     db: Session = Depends(get_db),
 ):
     """Trigger a background sync of CPSC recall data."""
-    background_tasks.add_task(fetch_cpsc_recalls, db, days_back=days_back)
+    async def _sync_task():
+        task_db = SessionLocal()
+        try:
+            await fetch_cpsc_recalls(task_db, days_back=days_back)
+        finally:
+            task_db.close()
+
+    background_tasks.add_task(_sync_task)
     return {"message": "CPSC sync started in the background"}
 
 
@@ -116,6 +123,52 @@ def deactivate_recall(recall_id: int, db: Session = Depends(get_db)):
     recall.is_active = False
     db.commit()
     return {"message": "Recall deactivated", "id": recall_id}
+
+
+@router.post("/seed", summary="Seed sample recalled products for demo/testing")
+def seed_recalls(db: Session = Depends(get_db)):
+    """Insert a set of real CPSC recalled products for offline demo use."""
+    from datetime import datetime as dt
+    samples = [
+        dict(cpsc_recall_id="seed-001", recall_number="24-001", product_name="Infant Inclined Sleeper",
+             brand="Fisher-Price", product_type="Infant Product", category="Children's Products",
+             product_description="Rock 'n Play infant sleeper recalled due to infant deaths.",
+             hazard_description="Infants can roll over and suffocate", recall_date=dt(2019, 4, 12),
+             search_keywords=["fisher-price","rock n play","sleeper","infant","baby sleeper"],
+             model_numbers=["CMR37","CMR39"], is_active=True, is_banned=True),
+        dict(cpsc_recall_id="seed-002", recall_number="24-002", product_name="Hoverboard Self-Balancing Scooter",
+             brand="Swagway", product_type="Recreational Equipment", category="Sports & Recreation",
+             product_description="Hoverboards recalled due to fire and explosion hazard from lithium batteries.",
+             hazard_description="Battery can overheat, catch fire, or explode", recall_date=dt(2016, 7, 6),
+             search_keywords=["hoverboard","swagway","self-balancing","scooter","swagtron"],
+             model_numbers=["X1"], is_active=True, is_banned=False),
+        dict(cpsc_recall_id="seed-003", recall_number="24-003", product_name="Portable Charger / Power Bank",
+             brand="Anker", product_type="Electronics", category="Electronics",
+             product_description="Power banks recalled due to fire hazard from overheating battery.",
+             hazard_description="Battery can overheat and catch fire", recall_date=dt(2023, 3, 15),
+             search_keywords=["anker","power bank","portable charger","battery pack"],
+             model_numbers=["A1263"], is_active=True, is_banned=False),
+        dict(cpsc_recall_id="seed-004", recall_number="24-004", product_name="Children's Magnetic Toy Set",
+             brand="Buckyballs", product_type="Toy", category="Toys",
+             product_description="High-powered magnetic balls recalled due to ingestion hazard for children.",
+             hazard_description="Small magnets can be swallowed and attract internally causing injury",
+             recall_date=dt(2012, 7, 10),
+             search_keywords=["buckyballs","magnetic","magnets","bucky","neodymium","magnet balls"],
+             model_numbers=[], is_active=True, is_banned=True),
+        dict(cpsc_recall_id="seed-005", recall_number="24-005", product_name="Infant Bath Seat",
+             brand="Summer Infant", product_type="Infant Product", category="Children's Products",
+             product_description="Bath seats recalled due to drowning risk.",
+             hazard_description="Child can tip over and drown", recall_date=dt(2020, 9, 1),
+             search_keywords=["summer infant","bath seat","baby bath","infant bath"],
+             model_numbers=["91749"], is_active=True, is_banned=False),
+    ]
+    created = 0
+    for s in samples:
+        if not db.query(RecalledProduct).filter(RecalledProduct.cpsc_recall_id == s["cpsc_recall_id"]).first():
+            db.add(RecalledProduct(**s))
+            created += 1
+    db.commit()
+    return {"message": f"Seeded {created} sample recalls ({len(samples) - created} already existed)"}
 
 
 @router.post("/import", summary="Manually import a recall record")

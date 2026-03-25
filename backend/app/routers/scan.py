@@ -7,7 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks, Query
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
-from ..database import get_db
+from ..database import get_db, SessionLocal
 from ..models.recall import RecalledProduct
 from ..models.listing import ScanJob
 from ..services.scan_service import run_scan, run_all_platforms_scan
@@ -46,6 +46,11 @@ def list_platforms():
     return {"platforms": list(PLATFORM_SCRAPERS.keys())}
 
 
+@router.get("/trigger", include_in_schema=False)
+def trigger_method_hint():
+    raise HTTPException(status_code=405, detail="Use POST /api/scans/trigger to start a scan")
+
+
 @router.post("/trigger", summary="Trigger a new scan job")
 async def trigger_scan(
     payload: ScanRequest,
@@ -70,20 +75,28 @@ async def trigger_scan(
         recalls = db.query(RecalledProduct).filter(RecalledProduct.is_active == True).all()
 
     if not recalls:
-        raise HTTPException(status_code=404, detail="No active recalls found to scan for")
+        return {"message": "No active recalls found — sync CPSC data first", "platforms": [], "recall_count": 0}
+
+    async def _scan_task(platform: str, recall_id: int) -> None:
+        task_db = SessionLocal()
+        try:
+            task_recall = task_db.query(RecalledProduct).filter(RecalledProduct.id == recall_id).first()
+            if task_recall:
+                await run_scan(
+                    db=task_db,
+                    platform=platform,
+                    recall=task_recall,
+                    max_results=payload.max_results,
+                    auto_submit_esafe=payload.auto_submit_esafe,
+                )
+        finally:
+            task_db.close()
 
     # Queue background tasks
     job_count = 0
     for recall in recalls:
         for platform in platforms:
-            background_tasks.add_task(
-                run_scan,
-                db=db,
-                platform=platform,
-                recall=recall,
-                max_results=payload.max_results,
-                auto_submit_esafe=payload.auto_submit_esafe,
-            )
+            background_tasks.add_task(_scan_task, platform, recall.id)
             job_count += 1
 
     return {
@@ -123,3 +136,10 @@ def get_scan(job_id: int, db: Session = Depends(get_db)):
     if not job:
         raise HTTPException(status_code=404, detail="Scan job not found")
     return job
+
+
+@router.delete("/", summary="Delete all scan jobs")
+def delete_all_scans(db: Session = Depends(get_db)):
+    count = db.query(ScanJob).delete()
+    db.commit()
+    return {"message": f"Deleted {count} scan job(s)"}
